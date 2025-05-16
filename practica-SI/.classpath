@@ -5,5 +5,7 @@
 	<classpathentry kind="lib" path="lib/commons-codec-1.3.jar"/>
 	<classpathentry kind="lib" path="lib/jade.jar"/>
 	<classpathentry kind="lib" path="lib/vosk-0.3.45.jar"/>
+	<classpathentry kind="lib" path="lib/jna-5.13.0.jar"/>
+	<classpathentry kind="lib" path="lib/jna-platform-5.13.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

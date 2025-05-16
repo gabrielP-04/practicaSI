@@ -1,4 +1,3 @@
-// Paquete base para todos los agentes
 package es.upm.transcriptor;
 
 import jade.core.Agent;
@@ -7,10 +6,6 @@ import jade.lang.acl.*;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.*;
 import jade.domain.FIPAException;
-
-// ============================
-// Agente de Interfaz
-// ============================
 public class AgenteInterfaz extends Agent {
     protected void setup() {
         System.out.println("[Interfaz] Iniciado: " + getLocalName());
