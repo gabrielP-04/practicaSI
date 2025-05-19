@@ -1,3 +1,4 @@
+// Paquete base para todos los agentes
 package es.upm.transcriptor;
 
 import jade.core.AID;
@@ -31,17 +32,23 @@ public class AgentePercepcion extends Agent {
             e.printStackTrace();
         }
 
-        addBehaviour(new OneShotBehaviour(this) {
+        addBehaviour(new CyclicBehaviour() {
             public void action() {
-                String modeloRuta = "models/vosk-model-small-es-0.42";
-                String audioRuta = "audios/salida.wav";
-                String textoTranscrito = transcribirAudio(modeloRuta, audioRuta);
+                ACLMessage msg = receive();
+                if (msg != null) {
+                    String audioRuta = msg.getContent();
+                    System.out.println("[Percepcion] Ruta de audio recibida: " + audioRuta);
+                    String modeloRuta = "models/vosk-model-small-es-0.42";
+                    String textoTranscrito = transcribirAudio(modeloRuta, audioRuta);
 
-                ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-                msg.addReceiver(new AID("agProc", AID.ISLOCALNAME));
-                msg.setContent(textoTranscrito);
-                send(msg);
-                System.out.println("[Percepcion] Texto enviado al procesador.");
+                    ACLMessage respuesta = new ACLMessage(ACLMessage.INFORM);
+                    respuesta.addReceiver(new AID("agProc", AID.ISLOCALNAME));
+                    respuesta.setContent(textoTranscrito);
+                    send(respuesta);
+                    System.out.println("[Percepcion] Texto enviado al procesador.");
+                } else {
+                    block();
+                }
             }
         });
     }
@@ -68,13 +75,7 @@ public class AgentePercepcion extends Agent {
                     String result = recognizer.getResult();
                     String texto = extraerTexto(result);
                     if (!texto.isEmpty()) {
-                    	String[] palabras = texto.toUpperCase().split(" ");
-                    	for (int i = 0; i < palabras.length; i++) {
-                    	    resultado.append(palabras[i]).append(" ");
-                    	    if ((i + 1) % 10 == 0) {
-                    	        resultado.append("\n");
-                    	    }
-                    	}
+                        resultado.append(texto.toUpperCase()).append("\n");
                     }
                 }
             }
