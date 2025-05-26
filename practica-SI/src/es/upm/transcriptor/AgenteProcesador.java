@@ -1,4 +1,3 @@
-// Paquete base para todos los agentes
 package es.upm.transcriptor;
 
 import jade.core.AID;
@@ -9,9 +8,6 @@ import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.*;
 import jade.domain.FIPAException;
 
-// ============================
-// Agente de Procesamiento
-// ============================
 public class AgenteProcesador extends Agent {
     protected void setup() {
         System.out.println("[Procesador] Iniciado: " + getLocalName());
@@ -33,10 +29,10 @@ public class AgenteProcesador extends Agent {
                 ACLMessage msg = receive();
                 if (msg != null) {
                     String texto = msg.getContent();
-                    String procesado = texto.toUpperCase(); // Simulacion de procesamiento
+                    String procesado = texto;
 
                     ACLMessage respuesta = new ACLMessage(ACLMessage.INFORM);
-                    respuesta.addReceiver(new AID("interfaz", AID.ISLOCALNAME));
+                    respuesta.addReceiver(new AID("agUI", AID.ISLOCALNAME));
                     respuesta.setContent(procesado);
                     send(respuesta);
 
