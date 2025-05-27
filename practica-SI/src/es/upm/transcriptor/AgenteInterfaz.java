@@ -20,6 +20,7 @@ public class AgenteInterfaz extends Agent {
     private JTextField urlField;
     private JTextArea outputArea;
     private EmbeddedMediaPlayerComponent mediaPlayerComponent;
+     boolean videoListo = false;
 
     protected void setup() {
         System.out.println("[Interfaz] Iniciado: " + getLocalName());
@@ -43,12 +44,16 @@ public class AgenteInterfaz extends Agent {
                 ACLMessage msg = receive();
                 if (msg != null) {
                     String contenido = msg.getContent();
-                    if ("VIDEO_LISTO".equals(contenido)) {
-                        reproducirVideo();
-                    } else {
-                        System.out.println("[Interfaz] Texto final recibido:");
-                        System.out.println(contenido);
-                        outputArea.setText(contenido);
+                    if (videoListo || "VIDEO_LISTO".equals(contenido)) {
+                        videoListo = true;
+                        if ("SUBT_LISTO".equals(contenido)) {
+                            System.out.println("[Interfaz] Se esta reproduciendo el video");
+                            reproducirVideo();
+                            System.out.println("[Interfaz] Texto final recibido:");
+                            System.out.println(contenido);
+                            outputArea.setText(contenido);
+                            videoListo = false;
+                        }
                     }
                 } else {
                     block();

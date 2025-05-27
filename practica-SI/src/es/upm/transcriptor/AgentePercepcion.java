@@ -1,4 +1,3 @@
-// Paquete base para todos los agentes
 package es.upm.transcriptor;
 
 import jade.core.AID;
@@ -9,12 +8,15 @@ import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.*;
 import jade.domain.FIPAException;
 
+import org.vosk.LibVosk;
+import org.vosk.LogLevel;
 import org.vosk.Model;
 import org.vosk.Recognizer;
 
 import javax.sound.sampled.*;
 import java.io.*;
-import java.util.regex.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AgentePercepcion extends Agent {
     protected void setup() {
@@ -39,11 +41,16 @@ public class AgentePercepcion extends Agent {
                     String audioRuta = msg.getContent();
                     System.out.println("[Percepcion] Ruta de audio recibida: " + audioRuta);
                     String modeloRuta = "models/vosk-model-small-es-0.42";
-                    String textoTranscrito = transcribirAudio(modeloRuta, audioRuta);
+                    String subtítulo = null;
+                    try {
+                        subtítulo = transcribirAudio(modeloRuta, audioRuta);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
                     ACLMessage respuesta = new ACLMessage(ACLMessage.INFORM);
-                    respuesta.addReceiver(new AID("agProc", AID.ISLOCALNAME));
-                    respuesta.setContent(textoTranscrito);
+                    respuesta.addReceiver(new AID("agUI", AID.ISLOCALNAME));
+                    respuesta.setContent("SUBT_LISTO");
                     send(respuesta);
                     System.out.println("[Percepcion] Texto enviado al procesador.");
                 } else {
@@ -53,47 +60,99 @@ public class AgentePercepcion extends Agent {
         });
     }
 
-    private String transcribirAudio(String modeloPath, String audioPath) {
-        StringBuilder resultado = new StringBuilder();
+    private String transcribirAudio(String modelPath, String audioPath) throws Exception {
+        LibVosk.setLogLevel(LogLevel.WARNINGS);
 
-        try (Model model = new Model(modeloPath);
-             InputStream ais = new FileInputStream(audioPath);
-             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new BufferedInputStream(ais))) {
+        String outputSrt = "downloads/video.srt";        // Salida SRT
 
-            AudioFormat format = audioInputStream.getFormat();
-            if (format.getSampleRate() != 16000 || format.getChannels() != 1) {
-                System.err.println("[ERROR] El archivo .wav debe estar a 16kHz y en mono canal.");
-                return "";
+        Model model = new Model(modelPath);
+        Recognizer recognizer = new Recognizer(model, 16000.0f);
+        recognizer.setWords(true);
+
+        AudioInputStream ais = AudioSystem.getAudioInputStream(new File(audioPath));
+        ais = AudioSystem.getAudioInputStream(AudioFormat.Encoding.PCM_SIGNED, ais);
+
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+
+        List<SubtitleSegment> segments = new ArrayList<>();
+        int index = 1;
+
+        while ((bytesRead = ais.read(buffer)) >= 0) {
+            if (recognizer.acceptWaveForm(buffer, bytesRead)) {
+                String result = recognizer.getResult();
+                SubtitleSegment segment = SubtitleSegment.fromJson(index++, result);
+                if (segment != null)
+                    segments.add(segment);
             }
-
-            Recognizer recognizer = new Recognizer(model, 16000);
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-
-            while ((bytesRead = audioInputStream.read(buffer)) >= 0) {
-                if (recognizer.acceptWaveForm(buffer, bytesRead)) {
-                    String result = recognizer.getResult();
-                    String texto = extraerTexto(result);
-                    if (!texto.isEmpty()) {
-                        resultado.append(texto.toUpperCase()).append("\n");
-                    }
-                }
-            }
-            String finalResult = recognizer.getFinalResult();
-            resultado.append(extraerTexto(finalResult).toUpperCase());
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return resultado.toString().trim();
+
+        // Resultado final
+        String finalResult = recognizer.getFinalResult();
+        SubtitleSegment finalSegment = SubtitleSegment.fromJson(index++, finalResult);
+        if (finalSegment != null)
+            segments.add(finalSegment);
+
+        recognizer.close();
+
+        // Escribe archivo .srt
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputSrt))) {
+            for (SubtitleSegment seg : segments) {
+                writer.write(seg.toSrtFormat());
+                writer.newLine();
+            }
+        }
+
+        System.out.println("Subtítulos guardados en: " + outputSrt);
+        return outputSrt;
     }
 
-    private String extraerTexto(String json) {
-        Pattern pattern = Pattern.compile("\\\"text\\\" *: *\\\"(.*?)\\\"");
-        Matcher matcher = pattern.matcher(json);
-        if (matcher.find()) {
-            return matcher.group(1);
+    static class SubtitleSegment {
+        int index;
+        double start;
+        double end;
+        String text;
+
+        static SubtitleSegment fromJson(int index, String json) {
+            try {
+                // Solo arregla comas decimales mal formateadas (sin romper el JSON)
+                json = json.replaceAll("(\\d),(\\d{3,})", "$1.$2");
+
+                org.json.JSONObject obj = new org.json.JSONObject(json);
+                org.json.JSONArray words = obj.getJSONArray("result");
+                if (words.length() == 0)
+                    return null;
+
+                double start = words.getJSONObject(0).getDouble("start");
+                double end = words.getJSONObject(words.length() - 1).getDouble("end");
+                String text = obj.getString("text");
+
+                SubtitleSegment s = new SubtitleSegment();
+                s.index = index;
+                s.start = start;
+                s.end = end;
+                s.text = text;
+                return s;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
         }
-        return "";
+
+        String formatTime(double seconds) {
+            int h = (int) (seconds / 3600);
+            int m = (int) ((seconds % 3600) / 60);
+            int s = (int) (seconds % 60);
+            int ms = (int) ((seconds - (int) seconds) * 1000);
+            return String.format("%02d:%02d:%02d,%03d", h, m, s, ms);
+        }
+
+        String toSrtFormat() {
+            return String.format("%d\n%s --> %s\n%s\n",
+                    index,
+                    formatTime(start),
+                    formatTime(end),
+                    text);
+        }
     }
 }
