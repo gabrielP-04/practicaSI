@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "VoskSubtitleGenerator",
+      "request": "launch",
+      "mainClass": "es.upm.transcriptor.VoskSubtitleGenerator",
+      "projectName": "transcriptor"
+    },
+    {
+      "type": "java",
+      "name": "Lanzar JADE con varios agentes",
+      "request": "launch",
+      "mainClass": "jade.Boot",
+      "projectName": "transcriptor",
+      "args": "-gui -port 1200 agDesc:es.upm.transcriptor.AgenteDescarga;agPer:es.upm.transcriptor.AgentePercepcion;agProc:es.upm.transcriptor.AgenteProcesador;agUI:es.upm.transcriptor.AgenteInterfaz",
+      "vmArgs": "-Djava.library.path=lib"
+    }
+  ]
+}

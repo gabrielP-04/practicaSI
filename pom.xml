@@ -1,0 +1,105 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>es.upm.transcriptor</groupId>
+  <artifactId>transcriptor</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+    <!-- JADE -->
+    <dependency>
+      <groupId>com.tilab.jade</groupId>
+      <artifactId>jade</artifactId>
+      <version>4.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/jade.jar</systemPath>
+    </dependency>
+
+    <!-- Dependencias locales -->
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.3</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-codec-1.3.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>5.13.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/jna-5.13.0.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna-platform</artifactId>
+      <version>5.13.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/jna-platform-5.13.0.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20231013</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/json-20231013.jar</systemPath>
+    </dependency>
+
+    <!-- VLCJ -->
+    <dependency>
+      <groupId>uk.co.caprica</groupId>
+      <artifactId>vlcj</artifactId>
+      <version>4.7.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/vlcj-4.7.1.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>uk.co.caprica</groupId>
+      <artifactId>vlcj-natives</artifactId>
+      <version>4.1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/vlcj-natives-4.1.0.jar</systemPath>
+    </dependency>
+
+    <!-- Vosk -->
+    <dependency>
+      <groupId>org.vosk</groupId>
+      <artifactId>vosk</artifactId>
+      <version>0.3.45</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/vosk-0.3.45.jar</systemPath>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <mainClass>jade.Boot</mainClass>
+          <classpathScope>system</classpathScope>
+          <arguments>
+            <argument>-gui</argument>
+            <argument>transcriptor:es.upm.transcriptor.AgenteInterfaz</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
