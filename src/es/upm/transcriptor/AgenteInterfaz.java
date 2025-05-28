@@ -11,7 +11,11 @@ import jade.domain.FIPAException;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -71,7 +75,7 @@ public class AgenteInterfaz extends Agent {
 	    JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
 	    mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-	    // Top input (una línea)
+	    // Top input
 	    JPanel topPanel = new JPanel(new BorderLayout(10, 0));
 	    JLabel label = new JLabel("Introduce enlace de YouTube:");
 	    label.setFont(new Font("SansSerif", Font.BOLD, 16));
@@ -79,45 +83,80 @@ public class AgenteInterfaz extends Agent {
 	    urlField.setFont(new Font("SansSerif", Font.PLAIN, 16));
 	    JButton enviarBtn = new JButton("Transcribir y reproducir");
 	    enviarBtn.setFont(new Font("SansSerif", Font.BOLD, 16));
-	    enviarBtn.setForeground(Color.BLACK);
-
 	    topPanel.add(label, BorderLayout.WEST);
 	    topPanel.add(urlField, BorderLayout.CENTER);
 	    topPanel.add(enviarBtn, BorderLayout.EAST);
 	    mainPanel.add(topPanel, BorderLayout.NORTH);
 
-	    // Media player (854x480)
+	    // Video panel
 	    mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
 	    mediaPlayerComponent.setPreferredSize(new Dimension(854, 480));
 	    JPanel videoPanel = new JPanel(new BorderLayout());
 	    videoPanel.add(mediaPlayerComponent, BorderLayout.CENTER);
-
 	    JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-	    JButton btnPlay = new JButton("\u25B6"); // ▶
-	    JButton btnPause = new JButton("\u23F8"); // ⏸
+	    JButton btnPlay = new JButton("\u25B6");
+	    JButton btnPause = new JButton("\u23F8");
 	    controlsPanel.add(btnPlay);
 	    controlsPanel.add(btnPause);
 	    videoPanel.add(controlsPanel, BorderLayout.SOUTH);
 
-	    // Transcription area
-	    JPanel transcriptionPanel = new JPanel(new BorderLayout(5, 5));
+	 // Transcription area
+	    JPanel transcriptionPanel = new JPanel();
+	    transcriptionPanel.setLayout(new BorderLayout(5, 5));
+	    transcriptionPanel.setPreferredSize(new Dimension(400, 480));
+
 	    JLabel transcriptionLabel = new JLabel("Transcripción:");
 	    transcriptionLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+	    transcriptionPanel.add(transcriptionLabel, BorderLayout.NORTH);
+
 	    outputArea = new JTextArea();
 	    outputArea.setFont(new Font("Monospaced", Font.PLAIN, 16));
 	    outputArea.setEditable(false);
 	    outputArea.setLineWrap(true);
 	    outputArea.setWrapStyleWord(true);
 	    JScrollPane scrollPane = new JScrollPane(outputArea);
-	    scrollPane.setPreferredSize(new Dimension(400, 480));
-	    transcriptionPanel.add(transcriptionLabel, BorderLayout.NORTH);
-	    transcriptionPanel.add(scrollPane, BorderLayout.CENTER);
+	    scrollPane.setPreferredSize(new Dimension(400, 400)); // tamaño fijo
+	    scrollPane.setVisible(false); // oculto por defecto
 
-	    // Split panel
+	    JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+	    JButton toggleTranscriptionBtn = new JButton("Mostrar transcripción completa");
+	    JButton downloadBtn = new JButton("Descargar transcripción");
+	    buttonsPanel.add(toggleTranscriptionBtn);
+	    buttonsPanel.add(downloadBtn);
+
+	    toggleTranscriptionBtn.addActionListener(e -> {
+	        boolean visible = scrollPane.isVisible();
+	        scrollPane.setVisible(!visible);
+	        toggleTranscriptionBtn.setText(visible ? "Mostrar transcripción completa" : "Ocultar transcripción");
+	        transcriptionPanel.revalidate();
+	        transcriptionPanel.repaint();
+	    });
+
+	    downloadBtn.addActionListener(e -> {
+	        JFileChooser fileChooser = new JFileChooser();
+	        fileChooser.setDialogTitle("Guardar transcripción");
+	        int userSelection = fileChooser.showSaveDialog(frame);
+	        if (userSelection == JFileChooser.APPROVE_OPTION) {
+	            File fileToSave = fileChooser.getSelectedFile();
+	            try (PrintWriter out = new PrintWriter(fileToSave)) {
+	                out.println(outputArea.getText());
+	            } catch (IOException ex) {
+	                ex.printStackTrace();
+	            }
+	        }
+	    });
+
+	    JPanel contentPanel = new JPanel(new BorderLayout(5, 5));
+	    contentPanel.add(buttonsPanel, BorderLayout.NORTH);
+	    contentPanel.add(scrollPane, BorderLayout.CENTER);
+
+	    transcriptionPanel.add(contentPanel, BorderLayout.CENTER);
+
+	    // Center layout
 	    JPanel centerPanel = new JPanel();
 	    centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.X_AXIS));
 	    centerPanel.add(videoPanel);
-	    centerPanel.add(Box.createRigidArea(new Dimension(10, 0))); // spacing
+	    centerPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 	    centerPanel.add(transcriptionPanel);
 
 	    mainPanel.add(centerPanel, BorderLayout.CENTER);
@@ -138,6 +177,7 @@ public class AgenteInterfaz extends Agent {
 	    btnPlay.addActionListener(e -> mediaPlayerComponent.mediaPlayer().controls().play());
 	    btnPause.addActionListener(e -> mediaPlayerComponent.mediaPlayer().controls().pause());
 	}
+
 
 	private void enviarMensaje(String url) {
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
