@@ -1,6 +1,7 @@
 // Paquete base para todos los agentes
 package es.upm.transcriptor;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.*;
 import jade.lang.acl.*;
@@ -51,10 +52,15 @@ public class AgentePercepcion extends Agent {
                         String modeloPath = getModeloPorIdioma(idioma);
                         if (modeloPath != null) {
                             try {
-                                transcribirAudio(rutaAudio, modeloPath);
+                                transcribirAudio(modeloPath, rutaAudio);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+                            ACLMessage respuesta = new ACLMessage(ACLMessage.INFORM);
+                            respuesta.addReceiver(new AID("agUI", AID.ISLOCALNAME));
+                            respuesta.setContent("SUBT_LISTO");
+                            send(respuesta);
+                            System.out.println("[Percepcion] Texto enviado al procesador.");
                         } else {
                             System.err.println("[Percepcion] Idioma no soportado: " + idioma);
                         }
@@ -90,17 +96,21 @@ public class AgentePercepcion extends Agent {
         while ((bytesRead = ais.read(buffer)) >= 0) {
             if (recognizer.acceptWaveForm(buffer, bytesRead)) {
                 String result = recognizer.getResult();
-                SubtitleSegment segment = SubtitleSegment.fromJson(index++, result);
-                if (segment != null)
-                    segments.add(segment);
+                List<SubtitleSegment> subSegments = SubtitleSegment.fromJson(index, result, 12); // 12 palabras por frase
+                for (SubtitleSegment seg : subSegments) {
+                    segments.add(seg);
+                    index++;
+                }
             }
         }
 
         // Resultado final
         String finalResult = recognizer.getFinalResult();
-        SubtitleSegment finalSegment = SubtitleSegment.fromJson(index++, finalResult);
-        if (finalSegment != null)
-            segments.add(finalSegment);
+        List<SubtitleSegment> subSegments = SubtitleSegment.fromJson(index, finalResult, 12); // 12 palabras por frase
+        for (SubtitleSegment seg : subSegments) {
+            segments.add(seg);
+            index++;
+        }
 
         recognizer.close();
 
@@ -148,11 +158,8 @@ public class AgentePercepcion extends Agent {
             case "portuguese":
                 return "models/vosk-model-small-pt-0.3";
 
-            case "zh":
-            case "zho":
-            case "chinese":
-            case "mandarin":
-                return "models/vosk-model-small-cn-0.22";
+            case "ja":
+                return "models/vosk-model-small-ja-0.22";
 
             default:
                 return null; // o puedes retornar un modelo por defecto, como español
@@ -165,30 +172,52 @@ public class AgentePercepcion extends Agent {
         double end;
         String text;
 
-        static SubtitleSegment fromJson(int index, String json) {
+        static List<SubtitleSegment> fromJson(int indexStart, String json, int maxWordsPerSegment) {
+            List<SubtitleSegment> segments = new ArrayList<>();
             try {
-                // Solo arregla comas decimales mal formateadas (sin romper el JSON)
                 json = json.replaceAll("(\\d),(\\d{3,})", "$1.$2");
 
                 org.json.JSONObject obj = new org.json.JSONObject(json);
+                if (!obj.has("result")) {
+                    return segments; // Devuelve vacío sin fallar
+                }
                 org.json.JSONArray words = obj.getJSONArray("result");
                 if (words.length() == 0)
-                    return null;
+                    return segments;
 
-                double start = words.getJSONObject(0).getDouble("start");
-                double end = words.getJSONObject(words.length() - 1).getDouble("end");
-                String text = obj.getString("text");
+                List<String> phraseWords = new ArrayList<>();
+                double segmentStart = 0;
+                double segmentEnd = 0;
+                int index = indexStart;
 
-                SubtitleSegment s = new SubtitleSegment();
-                s.index = index;
-                s.start = start;
-                s.end = end;
-                s.text = text;
-                return s;
+                for (int i = 0; i < words.length(); i++) {
+                    org.json.JSONObject wordObj = words.getJSONObject(i);
+                    String word = wordObj.getString("word");
+                    double start = wordObj.getDouble("start");
+                    double end = wordObj.getDouble("end");
+
+                    if (phraseWords.isEmpty()) {
+                        segmentStart = start;
+                    }
+
+                    phraseWords.add(word);
+                    segmentEnd = end;
+
+                    if (phraseWords.size() >= maxWordsPerSegment || i == words.length() - 1) {
+                        SubtitleSegment s = new SubtitleSegment();
+                        s.index = index++;
+                        s.start = segmentStart;
+                        s.end = segmentEnd;
+                        s.text = String.join(" ", phraseWords);
+                        segments.add(s);
+                        phraseWords.clear();
+                    }
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
-                return null;
             }
+            return segments;
         }
 
         String formatTime(double seconds) {
