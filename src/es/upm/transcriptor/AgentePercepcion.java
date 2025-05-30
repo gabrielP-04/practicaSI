@@ -77,7 +77,7 @@ public class AgentePercepcion extends Agent {
     private String transcribirAudio(String modelPath, String audioPath) throws Exception {
         LibVosk.setLogLevel(LogLevel.WARNINGS);
 
-        String outputSrt = "downloads/video.srt"; // Salida SRT
+        String outputSrt = "downloads/video.srt"; 
 
         Model model = new Model(modelPath);
         Recognizer recognizer = new Recognizer(model, 16000.0f);
@@ -95,7 +95,7 @@ public class AgentePercepcion extends Agent {
         while ((bytesRead = ais.read(buffer)) >= 0) {
             if (recognizer.acceptWaveForm(buffer, bytesRead)) {
                 String result = recognizer.getResult();
-                List<SubtitleSegment> subSegments = SubtitleSegment.fromJson(index, result, 12); // 12 palabras por frase
+                List<SubtitleSegment> subSegments = SubtitleSegment.fromJson(index, result, 12); 
                 for (SubtitleSegment seg : subSegments) {
                     segments.add(seg);
                     index++;
@@ -105,7 +105,7 @@ public class AgentePercepcion extends Agent {
 
         // Resultado final
         String finalResult = recognizer.getFinalResult();
-        List<SubtitleSegment> subSegments = SubtitleSegment.fromJson(index, finalResult, 12); // 12 palabras por frase
+        List<SubtitleSegment> subSegments = SubtitleSegment.fromJson(index, finalResult, 12); 
         for (SubtitleSegment seg : subSegments) {
             segments.add(seg);
             index++;
@@ -137,11 +137,6 @@ public class AgentePercepcion extends Agent {
             case "english":
                 return "models/vosk-model-small-en-us-0.15";
 
-            case "de":
-            case "deu":
-            case "german":
-                return "models/vosk-model-small-de-0.15";
-
             case "fr":
             case "fra":
             case "french":
@@ -167,7 +162,7 @@ public class AgentePercepcion extends Agent {
 
                 org.json.JSONObject obj = new org.json.JSONObject(json);
                 if (!obj.has("result")) {
-                    return segments; // Devuelve vacío sin fallar
+                    return segments; 
                 }
                 org.json.JSONArray words = obj.getJSONArray("result");
                 if (words.length() == 0)

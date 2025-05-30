@@ -47,10 +47,10 @@ public class AgenteDescarga extends Agent {
                     String audioWav = descargarYConvertirAudioVideo(url);
 
                     if (audioWav != null) {
-                        // 1. Obtener idioma desde metadatos del video
-                        String idioma = obtenerIdiomaDesdeMetadatos(url); // usa el método que te pasé
+                        // Obtener idioma desde metadatos del video
+                        String idioma = obtenerIdiomaDesdeMetadatos(url);
 
-                        // 2. Enviar mensaje a AgentePercepcion con ruta + idioma
+                        // Enviar mensaje a AgentePercepcion con ruta + idioma
                         ACLMessage mensajeAudio = new ACLMessage(ACLMessage.INFORM);
                         mensajeAudio.addReceiver(new AID("agPer", AID.ISLOCALNAME));
                         mensajeAudio.setContent(audioWav + ";" + idioma);
@@ -58,7 +58,7 @@ public class AgenteDescarga extends Agent {
                         System.out.println(
                                 "[Descarga] Audio convertido enviado a AgentePercepcion con idioma: " + idioma);
 
-                        // 3. Avisar a la interfaz que el video está listo
+                        // Avisar a la interfaz que el video está listo
                         ACLMessage avisoVideoListo = new ACLMessage(ACLMessage.INFORM);
                         avisoVideoListo.addReceiver(new AID("agUI", AID.ISLOCALNAME));
                         avisoVideoListo.setContent("VIDEO_LISTO");
@@ -89,7 +89,7 @@ public class AgenteDescarga extends Agent {
             String audioMp3Path = "downloads/audio.mp3";
             String audioWavPath = "downloads/audio.wav";
 
-            // 1. Descarga el vídeo
+            // Descarga el vídeo
             System.out.println("[Descarga] Iniciando descarga del vídeo...");
             ProcessBuilder pbVideo = new ProcessBuilder(
             		YTDLP_PATH, "-f", "bestvideo+bestaudio", "--merge-output-format", "mp4", "-o", videoPath, url);
@@ -100,13 +100,13 @@ public class AgenteDescarga extends Agent {
             BufferedReader reader = new BufferedReader(new InputStreamReader(pVideo.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line); // Mostrar la salida de yt-dlp
+                System.out.println(line); 
             }
 
-            boolean finished = pVideo.waitFor(120, TimeUnit.SECONDS); // Espera 2 minutos
+            boolean finished = pVideo.waitFor(120, TimeUnit.SECONDS); 
             if (!finished) {
                 System.out.println("[Descarga] El proceso de descarga del vídeo no terminó a tiempo.");
-                pVideo.destroy(); // Termina el proceso si no terminó en el tiempo esperado
+                pVideo.destroy(); 
                 return null;
             }
             System.out.println("[Descarga] Vídeo descargado y combinado: " + videoPath);
@@ -119,13 +119,13 @@ public class AgenteDescarga extends Agent {
             Process pAudio = pbAudio.start();
             reader = new BufferedReader(new InputStreamReader(pAudio.getInputStream()));
             while ((line = reader.readLine()) != null) {
-                System.out.println(line); // Mostrar la salida de yt-dlp
+                System.out.println(line); 
             }
 
             finished = pAudio.waitFor(120, TimeUnit.SECONDS);
             if (!finished) {
                 System.out.println("[Descarga] El proceso de descarga del audio no terminó a tiempo.");
-                pAudio.destroy(); // Termina el proceso si no terminó en el tiempo esperado
+                pAudio.destroy(); 
                 return null;
             }
             System.out.println("[Descarga] Audio descargado: " + audioMp3Path);
@@ -138,7 +138,7 @@ public class AgenteDescarga extends Agent {
             Process pFfmpeg = pbFfmpeg.start();
             reader = new BufferedReader(new InputStreamReader(pFfmpeg.getInputStream()));
             while ((line = reader.readLine()) != null) {
-                System.out.println(line); // Mostrar la salida de ffmpeg
+                System.out.println(line); 
             }
 
             finished = pFfmpeg.waitFor(120, TimeUnit.SECONDS);
@@ -152,9 +152,8 @@ public class AgenteDescarga extends Agent {
             // Verifica si el archivo de audio WAV existe
             File wavFile = new File(audioWavPath);
             if (wavFile.exists()) {
-                // Limpia archivos temporales si existen
                 eliminarArchivosTemporales();
-                return audioWavPath; // Devolvemos la ruta del archivo WAV para enviarlo a Percepcion
+                return audioWavPath; 
             } else {
                 System.err.println("[Descarga] Error: El archivo WAV no se ha creado.");
                 return null;

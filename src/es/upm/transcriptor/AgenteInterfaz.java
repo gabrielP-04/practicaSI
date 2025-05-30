@@ -25,7 +25,6 @@ public class AgenteInterfaz extends Agent {
     private JProgressBar progressBar;
     private EmbeddedMediaPlayerComponent mediaPlayerComponent;
     private JSlider volumeSlider;
-    private JTextField jumpToField;
     boolean videoListo = false;
 
     protected void setup() {
@@ -115,25 +114,12 @@ public class AgenteInterfaz extends Agent {
         volumeSlider = new JSlider(0, 100, 50);
         volumeSlider.addChangeListener(e -> mediaPlayerComponent.mediaPlayer().audio().setVolume(volumeSlider.getValue()));
 
-        jumpToField = new JTextField(8);
-        JButton jumpBtn = new JButton("Ir a tiempo");
-        estilizarBoton(jumpBtn, gris);
-        jumpBtn.addActionListener(e -> {
-            String time = jumpToField.getText();
-            try {
-                String[] parts = time.split(":");
-                long ms = 0;
-                if (parts.length == 3) {
-                    ms += Integer.parseInt(parts[0]) * 3600000L;
-                    ms += Integer.parseInt(parts[1]) * 60000L;
-                    ms += Integer.parseInt(parts[2]) * 1000L;
-                } else if (parts.length == 2) {
-                    ms += Integer.parseInt(parts[0]) * 60000L;
-                    ms += Integer.parseInt(parts[1]) * 1000L;
-                }
-                mediaPlayerComponent.mediaPlayer().controls().setTime(ms);
-            } catch (Exception ignored) {}
+        JButton restartBtn = new JButton("Restart");
+        estilizarBoton(restartBtn, gris);
+        restartBtn.addActionListener(e -> {
+            mediaPlayerComponent.mediaPlayer().controls().setTime(0);
         });
+
 
         JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         controlsPanel.setBackground(fondo);
@@ -141,8 +127,7 @@ public class AgenteInterfaz extends Agent {
         controlsPanel.add(btnPause);
         controlsPanel.add(new JLabel("Volumen:"));
         controlsPanel.add(volumeSlider);
-        controlsPanel.add(jumpToField);
-        controlsPanel.add(jumpBtn);
+        controlsPanel.add(restartBtn);
 
         JButton btnVerTexto = new JButton("Ver transcripción completa");
         estilizarBoton(btnVerTexto, azul);
