@@ -17,6 +17,11 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
 
 public class AgenteDescarga extends Agent {
+	
+	private static final String TOOLS_DIR = "tools";
+	private static final String YTDLP_PATH = TOOLS_DIR + File.separator + "yt-dlp.exe";
+	private static final String FFMPEG_PATH = TOOLS_DIR + File.separator + "ffmpeg.exe";
+
     protected void setup() {
         System.out.println("[Descarga] Iniciado: " + getLocalName());
 
@@ -87,7 +92,7 @@ public class AgenteDescarga extends Agent {
             // 1. Descarga el vídeo
             System.out.println("[Descarga] Iniciando descarga del vídeo...");
             ProcessBuilder pbVideo = new ProcessBuilder(
-                    "yt-dlp", "-f", "bestvideo+bestaudio", "--merge-output-format", "mp4", "-o", videoPath, url);
+            		YTDLP_PATH, "-f", "bestvideo+bestaudio", "--merge-output-format", "mp4", "-o", videoPath, url);
             pbVideo.redirectErrorStream(true);
             Process pVideo = pbVideo.start();
 
@@ -109,7 +114,7 @@ public class AgenteDescarga extends Agent {
             // 2. Descarga el audio
             System.out.println("[Descarga] Iniciando descarga del audio...");
             ProcessBuilder pbAudio = new ProcessBuilder(
-                    "yt-dlp", "-x", "--audio-format", "mp3", "-o", audioMp3Path, url);
+            		YTDLP_PATH, "-x", "--audio-format", "mp3", "-o", audioMp3Path, url);
             pbAudio.redirectErrorStream(true);
             Process pAudio = pbAudio.start();
             reader = new BufferedReader(new InputStreamReader(pAudio.getInputStream()));
@@ -128,7 +133,7 @@ public class AgenteDescarga extends Agent {
             // 3. Convierte el audio a WAV
             System.out.println("[Descarga] Iniciando conversión del audio...");
             ProcessBuilder pbFfmpeg = new ProcessBuilder(
-                    "ffmpeg", "-y", "-i", audioMp3Path, "-ar", "16000", "-ac", "1", audioWavPath);
+            		FFMPEG_PATH, "-y", "-i", audioMp3Path, "-ar", "16000", "-ac", "1", audioWavPath);
             pbFfmpeg.redirectErrorStream(true);
             Process pFfmpeg = pbFfmpeg.start();
             reader = new BufferedReader(new InputStreamReader(pFfmpeg.getInputStream()));
@@ -199,7 +204,7 @@ public class AgenteDescarga extends Agent {
 
     private String obtenerIdiomaDesdeMetadatos(String url) {
         try {
-            ProcessBuilder pb = new ProcessBuilder("yt-dlp", "-J", url);
+            ProcessBuilder pb = new ProcessBuilder(YTDLP_PATH, "-J", url);
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
