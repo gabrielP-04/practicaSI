@@ -59,7 +59,7 @@ public class AgentePercepcion extends Agent {
                             respuesta.addReceiver(new AID("agUI", AID.ISLOCALNAME));
                             respuesta.setContent("SUBT_LISTO");
                             send(respuesta);
-                            System.out.println("[Percepcion] Texto enviado al procesador.");
+                            System.out.println("[Percepcion] Subtítulos listos para presentación.");
                         } else {
                             System.err.println("[Percepcion] Idioma no soportado: " + idioma);
                         }
@@ -147,21 +147,10 @@ public class AgentePercepcion extends Agent {
             case "french":
                 return "models/vosk-model-small-fr-0.22";
 
-            case "it":
-            case "ita":
-            case "italian":
-                return "models/vosk-model-small-it-0.4";
-
-            case "pt":
-            case "portugués":
-            case "portuguese":
-                return "models/vosk-model-small-pt-0.3";
-
-            case "ja":
-                return "models/vosk-model-small-ja-0.22";
-
+            
             default:
-                return null; 
+            	System.out.println("[Percepción] Idioma no reconocido, uso por defecto: español.");
+                return "models/vosk-model-small-es-0.42"; 
         }
     }
 
